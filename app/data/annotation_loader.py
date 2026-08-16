@@ -112,20 +112,23 @@ class AnnotationLoader:
     def load(self) -> None:
         """Load all available annotation files for this match."""
         if not self.match_path.exists():
-            # If path doesn't exist on current machine (e.g. dev laptop before GN100 transfer), load synthetic demo dataset
+            print(f"[AnnotationLoader] [WARNING] Match data directory not found at '{self.match_path}'. Automatically loading rich synthetic demo dataset.")
             self._load_synthetic_demo_data()
             self.is_loaded = True
             return
 
+        print(f"[AnnotationLoader] [INFO] Loading SoccerNet annotations from: {self.match_path}")
         self._load_labels_v2()
         self._load_labels_cameras()
         self._load_asr(half=1)
         self._load_asr(half=2)
+        print(f"[AnnotationLoader] [OK] Loaded {len(self.action_events)} action events, {len(self.camera_events)} camera markers, {len(self.commentary)} commentary segments.")
         self.is_loaded = True
 
     def _load_labels_v2(self) -> None:
         labels_file = self.match_path / "Labels-v2.json"
         if not labels_file.exists():
+            print(f"[AnnotationLoader] [INFO] Labels-v2.json not found at '{labels_file}'.")
             return
 
         try:
@@ -335,6 +338,11 @@ def discover_matches(data_root: str) -> List[MatchInfo]:
     merging with predefined rich metadata.
     """
     root_path = Path(data_root)
+    if not root_path.exists():
+        print(f"[AnnotationLoader] [WARNING] SoccerNet root data directory '{data_root}' does not exist on local filesystem. Pre-registering match catalog with fallback support.")
+    else:
+        print(f"[AnnotationLoader] [INFO] Scanning SoccerNet matches at: {data_root}")
+
     found_matches: List[MatchInfo] = []
 
     for preset in PRESET_MATCHES:

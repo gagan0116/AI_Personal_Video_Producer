@@ -51,8 +51,13 @@ class ClipExtractor:
 
         source_path = Path(source_file) if source_file else None
 
-        # If source video exists and FFmpeg is present, cut the real clip
-        if source_path and source_path.exists() and self.ffmpeg_available:
+        # Check if source video exists
+        if not source_path or not source_path.exists():
+            print(f"[ClipExtractor] [WARNING] Source video file missing or not found: '{source_file}'. Creating simulated placeholder clip for agent '{agent_id}'.")
+        elif not self.ffmpeg_available:
+            print(f"[ClipExtractor] [WARNING] FFmpeg not available on system PATH. Creating simulated placeholder clip for agent '{agent_id}'.")
+        else:
+            # Source video exists and FFmpeg is present, cut the real clip
             cmd = [
                 "ffmpeg", "-y",
                 "-ss", f"{start_sec:.3f}",
@@ -75,8 +80,10 @@ class ClipExtractor:
                 await asyncio.wait_for(proc.communicate(), timeout=20.0)
                 if proc.returncode == 0 and output_filepath.exists():
                     return web_url
+                else:
+                    print(f"[ClipExtractor] [WARNING] FFmpeg returned non-zero code {proc.returncode}. Falling back to placeholder clip.")
             except Exception as e:
-                print(f"[ClipExtractor] FFmpeg execution error: {e}")
+                print(f"[ClipExtractor] [WARNING] FFmpeg execution error: {e}. Falling back to placeholder clip.")
 
         # Fallback / Development mode: generate a minimal playable MP4 or placeholder
         await self._create_placeholder_clip(output_filepath, agent_id, duration_sec)

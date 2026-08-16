@@ -16,11 +16,14 @@ class SSEManager:
         """Register a new browser listener queue."""
         queue: asyncio.Queue = asyncio.Queue(maxsize=100)
         self._clients.add(queue)
+        print(f"[SSEManager] [CONNECT] SSE Client connected. Active listeners: {len(self._clients)}")
         return queue
 
     def disconnect(self, queue: asyncio.Queue):
         """Remove a disconnected listener queue."""
-        self._clients.discard(queue)
+        if queue in self._clients:
+            self._clients.discard(queue)
+            print(f"[SSEManager] [DISCONNECT] SSE Client disconnected. Active listeners: {len(self._clients)}")
 
     async def emit(self, event_type: str, data: Any):
         """
@@ -50,3 +53,5 @@ class SSEManager:
 
         for dead in dead_queues:
             self._clients.discard(dead)
+        if dead_queues:
+            print(f"[SSEManager] [WARNING] Cleaned up {len(dead_queues)} dead/disconnected SSE queue(s). Active listeners: {len(self._clients)}")

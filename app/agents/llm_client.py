@@ -34,10 +34,12 @@ class NemotronClient:
                     first_model_id = models[0].get("id")
                     if first_model_id:
                         self.model = first_model_id
-                        print(f"[NemotronClient] Auto-resolved active model ID: '{self.model}'")
+                        print(f"[NemotronClient] [ONLINE] Auto-resolved active model ID: '{self.model}'")
                 return True
-        except Exception:
-            pass
+            else:
+                print(f"[NemotronClient] [WARNING] LLM health check returned HTTP {resp.status_code}: {resp.text[:100]}")
+        except Exception as e:
+            print(f"[NemotronClient] [OFFLINE] LLM is OFFLINE or unreachable at '{self.base_url}' ({type(e).__name__}: {e})")
         return False
 
     async def chat(
@@ -62,21 +64,25 @@ class NemotronClient:
             if resp.status_code == 200:
                 data = resp.json()
                 content = data["choices"][0]["message"]["content"]
-                print(f"[Nemotron 35B] ✅ Response received ({len(content)} chars)")
+                print(f"[Nemotron 35B] [OK] Response received ({len(content)} chars)")
                 return content
             elif resp.status_code in (400, 404):
-                print(f"[NemotronClient] Model '{self.model}' not found (HTTP {resp.status_code}), discovering active model...")
+                print(f"[NemotronClient] Model '{self.model}' not found (HTTP {resp.status_code}), attempting auto-discovery...")
                 await self.check_health()
                 payload["model"] = self.model
                 retry_resp = await self.client.post("/chat/completions", json=payload)
                 if retry_resp.status_code == 200:
                     data = retry_resp.json()
                     content = data["choices"][0]["message"]["content"]
-                    print(f"[Nemotron 35B] ✅ Response received after model resolution ({len(content)} chars)")
+                    print(f"[Nemotron 35B] [OK] Response received after model resolution ({len(content)} chars)")
                     return content
-            print(f"[NemotronClient] ⚠️ LLM server returned HTTP {resp.status_code}: {resp.text[:150]}")
+            print(f"[NemotronClient] [WARNING] LLM server returned HTTP {resp.status_code}: {resp.text[:150]}")
+        except httpx.ConnectError:
+            print(f"[NemotronClient] [OFFLINE] LLM is OFFLINE (Connection refused at {self.base_url}).")
+        except httpx.TimeoutException:
+            print(f"[NemotronClient] [TIMEOUT] LLM request timed out at {self.base_url}.")
         except Exception as e:
-            print(f"[NemotronClient] ⚠️ Connection error: {e}")
+            print(f"[NemotronClient] [ERROR] LLM connection error: {type(e).__name__}: {e}")
         return ""
 
     async def chat_json(
@@ -105,11 +111,13 @@ class NemotronClient:
             if parsed:
                 return parsed
             else:
-                print(f"[NemotronClient] ⚠️ JSON parse failed for raw output: {response_text[:120]}...")
+                print(f"[NemotronClient] [INVALID JSON] LLM returned malformed JSON. Raw output: {response_text[:200]}...")
+        else:
+            print("[NemotronClient] [OFFLINE] No response received from LLM.")
 
-        # Fallback generation if local NIM is not yet running
+        # Fallback generation if local NIM is offline or returned bad JSON
         if fallback_handler:
-            print("[NemotronClient] ℹ️ Invoking heuristic fallback rule...")
+            print("[NemotronClient] [FALLBACK] Invoking heuristic fallback rule...")
             return fallback_handler(user_message)
         
         return {"selected_events": []}
