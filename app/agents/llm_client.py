@@ -47,7 +47,7 @@ class NemotronClient:
         system_prompt: str,
         user_message: str,
         temperature: float = 0.3,
-        max_tokens: int = 2048,
+        max_tokens: int = 8192,
     ) -> str:
         """Send chat completion to Nemotron NIM / vLLM."""
         try:
@@ -104,7 +104,7 @@ class NemotronClient:
             system_prompt=prompt_with_json_instruction,
             user_message=user_message,
             temperature=temperature,
-            max_tokens=2048
+            max_tokens=8192
         )
 
         if response_text:
