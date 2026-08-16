@@ -50,6 +50,11 @@ async def lifespan(app: FastAPI):
         model=settings.nemotron_model,
         api_key=settings.nemotron_api_key
     )
+    is_llm_ready = await llm_client.check_health()
+    if is_llm_ready:
+        print(f"• LLM Status: ONLINE (Active Model: '{llm_client.model}')")
+    else:
+        print(f"• LLM Status: OFFLINE (Check if vLLM/NIM is running at {settings.nemotron_url})")
     app.state.llm_client = llm_client
 
     # 3. Clip Extractor

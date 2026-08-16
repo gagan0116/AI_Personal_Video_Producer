@@ -61,18 +61,22 @@ class NemotronClient:
             resp = await self.client.post("/chat/completions", json=payload)
             if resp.status_code == 200:
                 data = resp.json()
-                return data["choices"][0]["message"]["content"]
+                content = data["choices"][0]["message"]["content"]
+                print(f"[Nemotron 35B] ✅ Response received ({len(content)} chars)")
+                return content
             elif resp.status_code in (400, 404):
-                # Try auto-resolving model name from /models and retry once
+                print(f"[NemotronClient] Model '{self.model}' not found (HTTP {resp.status_code}), discovering active model...")
                 await self.check_health()
                 payload["model"] = self.model
                 retry_resp = await self.client.post("/chat/completions", json=payload)
                 if retry_resp.status_code == 200:
                     data = retry_resp.json()
-                    return data["choices"][0]["message"]["content"]
-            print(f"[NemotronClient] LLM server returned status {resp.status_code}: {resp.text[:150]}")
+                    content = data["choices"][0]["message"]["content"]
+                    print(f"[Nemotron 35B] ✅ Response received after model resolution ({len(content)} chars)")
+                    return content
+            print(f"[NemotronClient] ⚠️ LLM server returned HTTP {resp.status_code}: {resp.text[:150]}")
         except Exception as e:
-            pass
+            print(f"[NemotronClient] ⚠️ Connection error: {e}")
         return ""
 
     async def chat_json(
@@ -100,9 +104,12 @@ class NemotronClient:
             parsed = self._extract_json(response_text)
             if parsed:
                 return parsed
+            else:
+                print(f"[NemotronClient] ⚠️ JSON parse failed for raw output: {response_text[:120]}...")
 
         # Fallback generation if local NIM is not yet running
         if fallback_handler:
+            print("[NemotronClient] ℹ️ Invoking heuristic fallback rule...")
             return fallback_handler(user_message)
         
         return {"selected_events": []}
