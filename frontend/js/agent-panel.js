@@ -10,62 +10,81 @@ class AgentPanel {
     this.videoPlayer = videoPlayer;
     this.feedElement = this.container.querySelector(".panel-feed");
     this.counterElement = this.container.querySelector(".clip-counter-pill");
-    this.presetSelect = this.container.querySelector(".agent-preset-select");
-    this.inputEdit = this.container.querySelector(".agent-input-edit");
-    this.btnToggleEdit = this.container.querySelector(".btn-toggle-edit");
+    this.textInput = this.container.querySelector(".agent-text-input");
+    this.btnSetPrompt = this.container.querySelector(".btn-set-prompt");
+    this.presetChipsContainer = this.container.querySelector(".preset-chips-row");
 
     this.outputs = [];
-    this.isCustomMode = false;
-
     this._bindEvents();
   }
 
   _bindEvents() {
-    // Preset dropdown change
-    if (this.presetSelect) {
-      this.presetSelect.addEventListener("change", (e) => {
-        const val = e.target.value;
-        if (val === "__custom__") {
-          this._enableCustomInput(true);
-        } else {
-          this._updateConfig({ preset: val, custom_input: val });
+    // 1. Submit prompt via Button
+    if (this.btnSetPrompt) {
+      this.btnSetPrompt.addEventListener("click", () => {
+        this._submitPrompt();
+      });
+    }
+
+    // 2. Submit prompt via Enter key in the visible input box
+    if (this.textInput) {
+      this.textInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this._submitPrompt();
         }
       });
     }
 
-    // Toggle custom edit button
-    if (this.btnToggleEdit) {
-      this.btnToggleEdit.addEventListener("click", () => {
-        this._enableCustomInput(!this.isCustomMode);
-      });
-    }
+    // 3. Quick preset chips click
+    if (this.presetChipsContainer) {
+      this.presetChipsContainer.addEventListener("click", (e) => {
+        const chip = e.target.closest(".preset-chip");
+        if (!chip) return;
 
-    // Custom input submit on Enter or blur
-    if (this.inputEdit) {
-      this.inputEdit.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          const val = this.inputEdit.value.trim();
-          if (val) {
-            this._updateConfig({ custom_input: val, preset: val });
-            this._enableCustomInput(false);
+        const val = chip.getAttribute("data-val");
+        if (val) {
+          // Highlight active chip
+          this.presetChipsContainer.querySelectorAll(".preset-chip").forEach(c => c.classList.remove("active"));
+          chip.classList.add("active");
+
+          // Update input field
+          if (this.textInput) {
+            this.textInput.value = val;
           }
+
+          // Trigger backend update
+          this._updateConfig({ custom_input: val, preset: val });
         }
       });
     }
   }
 
-  _enableCustomInput(enable) {
-    this.isCustomMode = enable;
-    if (enable) {
-      if (this.presetSelect) this.presetSelect.style.display = "none";
-      if (this.inputEdit) {
-        this.inputEdit.style.display = "block";
-        this.inputEdit.focus();
-        this.inputEdit.select();
+  _submitPrompt() {
+    if (!this.textInput) return;
+    const val = this.textInput.value.trim();
+    if (val) {
+      // Deactivate chips if custom text
+      if (this.presetChipsContainer) {
+        this.presetChipsContainer.querySelectorAll(".preset-chip").forEach(c => {
+          if (c.getAttribute("data-val") === val) {
+            c.classList.add("active");
+          } else {
+            c.classList.remove("active");
+          }
+        });
       }
-    } else {
-      if (this.presetSelect) this.presetSelect.style.display = "block";
-      if (this.inputEdit) this.inputEdit.style.display = "none";
+
+      // Visual feedback on the button
+      if (this.btnSetPrompt) {
+        const originalText = this.btnSetPrompt.innerHTML;
+        this.btnSetPrompt.innerHTML = "<span>✓ Saved</span>";
+        setTimeout(() => {
+          this.btnSetPrompt.innerHTML = originalText;
+        }, 1200);
+      }
+
+      this._updateConfig({ custom_input: val, preset: val });
     }
   }
 
@@ -84,24 +103,22 @@ class AgentPanel {
   }
 
   updatePresetsForMatch(matchInfo) {
-    if (!this.presetSelect || !matchInfo) return;
+    if (!this.presetChipsContainer || !matchInfo) return;
 
     if (this.agentId === "fan") {
       const starPlayers = matchInfo.star_players || ["Neymar", "Messi", "Suarez"];
-      this.presetSelect.innerHTML = "";
-      starPlayers.forEach(player => {
-        const opt = document.createElement("option");
-        opt.value = player;
-        opt.textContent = `⭐ Track ${player}`;
-        this.presetSelect.appendChild(opt);
-      });
-      const customOpt = document.createElement("option");
-      customOpt.value = "__custom__";
-      customOpt.textContent = "✏️ Custom Player...";
-      this.presetSelect.appendChild(customOpt);
+      this.presetChipsContainer.innerHTML = '<span class="chip-label">Quick:</span>';
 
-      if (starPlayers.length > 0) {
-        this.presetSelect.value = starPlayers[0];
+      starPlayers.slice(0, 4).forEach((player, idx) => {
+        const chip = document.createElement("button");
+        chip.className = `preset-chip ${idx === 0 ? "active" : ""}`;
+        chip.setAttribute("data-val", player);
+        chip.textContent = `⭐ ${player}`;
+        this.presetChipsContainer.appendChild(chip);
+      });
+
+      if (starPlayers.length > 0 && this.textInput) {
+        this.textInput.value = starPlayers[0];
       }
     }
   }
@@ -129,15 +146,20 @@ class AgentPanel {
       ? `• ${output.players.join(", ")}`
       : "";
 
+    const reasoningBlock = output.reasoning 
+      ? `<div class="card-reasoning-quote">🧠 ${this._escapeHtml(output.reasoning)}</div>`
+      : "";
+
     card.innerHTML = `
       <div class="card-top-row">
         <span class="card-time-badge">⏱ ${output.game_time}</span>
         <span class="card-type-tag">${output.event_type}</span>
       </div>
       <div class="card-caption">${this._escapeHtml(output.caption)}</div>
+      ${reasoningBlock}
       <div class="card-actions-row">
         <button class="btn-play-clip" data-clip-url="${output.clip_url || ''}">
-          <span>▶</span> Play Clip
+          <span>▶</span> Watch 10s Clip
         </button>
         <span class="card-intel-tag">${playersStr}</span>
       </div>
@@ -149,9 +171,11 @@ class AgentPanel {
       const url = output.clip_url || `/api/clips/${output.agent_id}/clip_${output.event_id}.mp4`;
       this.videoPlayer.playClip(
         url,
-        `${output.agent_type.toUpperCase()} PRODUCER — ${output.game_time}`,
+        `${output.agent_type.toUpperCase()} PRODUCER • ${output.game_time}`,
         output.caption,
-        output.event_type
+        output.event_type,
+        output.game_time,
+        this.agentId
       );
     });
 
@@ -165,10 +189,18 @@ class AgentPanel {
   clearFeed() {
     this.outputs = [];
     this._updateCounter();
+    const icons = {
+      fan: { icon: "👤", class: "fan-glow-icon", title: "Autonomous Fan Producer Ready", desc: "Scanning ASR commentary, visual detections & touches for your player." },
+      coach: { icon: "📋", class: "coach-glow-icon", title: "Tactical Analyst Agent Armed", desc: "Isolating structural vulnerabilities, broadcast replays, and set-piece executions." },
+      social: { icon: "📱", class: "social-glow-icon", title: "Social Media Producer Ready", desc: "Curating high-virality broadcast moments with auto-generated hashtags & captions." }
+    };
+    const agentMeta = icons[this.agentId] || icons.fan;
+
     this.feedElement.innerHTML = `
       <div class="feed-empty-state">
-        <div class="empty-icon">⚡</div>
-        <p>Awaiting match events. Producer will generate custom clips as play unfolds.</p>
+        <div class="empty-icon-glow ${agentMeta.class}">${agentMeta.icon}</div>
+        <h4>${agentMeta.title}</h4>
+        <p>${agentMeta.desc}</p>
       </div>
     `;
   }

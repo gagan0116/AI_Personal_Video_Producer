@@ -1,4 +1,5 @@
 import os
+import asyncio
 from pathlib import Path
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, Request, HTTPException, Query, Body
@@ -6,6 +7,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from sse_starlette.sse import EventSourceResponse
 
 from app.config import settings
+from app.api.sse import SSEManager
 
 router = APIRouter(prefix="/api")
 
