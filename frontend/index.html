@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal AI Sports Producer — NVIDIA Spark Hackathon</title>
+  <meta name="description" content="Autonomous multi-agent sports broadcast personalization running locally on Acer Veriton GN100 DGX Spark.">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏟️</text></svg>">
+</head>
+<body>
+
+  <!-- ── Top Header Navigation ── -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo-badge">
+        <svg class="nvidia-icon" viewBox="0 0 24 24">
+          <path d="M12.003 3C6.48 3 2 7.48 2 13c0 4.14 2.53 7.69 6.13 9.21.13.06.27.09.41.09.28 0 .54-.11.73-.31.39-.4.39-1.04 0-1.44-3.11-1.32-5.27-4.38-5.27-7.55 0-4.41 3.59-8 8-8s8 3.59 8 8c0 3.17-2.16 6.23-5.27 7.55-.39.4-.39 1.04 0 1.44.19.2.45.31.73.31.14 0 .28-.03.41-.09C19.47 20.69 22 17.14 22 13c0-5.52-4.48-10-9.997-10z"/>
+        </svg>
+        <span class="brand-title">Personal AI Sports Producer</span>
+      </div>
+      <span class="hardware-pill">Acer GN100 • DGX Spark 128GB Unified Memory</span>
+    </div>
+
+    <div class="header-status-group">
+      <div class="status-badge" id="statusBadge">
+        <span class="status-dot"></span>
+        <span id="statusText">System Standby</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Main Dashboard ── -->
+  <main class="dashboard-container">
+
+    <!-- ── Match Control & Live Broadcast Monitor ── -->
+    <section class="match-control-bar">
+      <!-- Match Selector -->
+      <div class="match-selector-wrapper">
+        <span class="control-label">Match Selection (SoccerNet 224p/720p)</span>
+        <select id="matchSelect" class="match-select">
+          <option value="barcelona_vs_paris_sg">Loading match catalog...</option>
+        </select>
+      </div>
+
+      <!-- Live Broadcast Monitor -->
+      <div class="broadcast-monitor">
+        <div class="scoreboard-row">
+          <div class="score-display">
+            <span id="scoreTeams">Barcelona vs Paris SG</span>
+            <span id="scoreVal" class="score-badge">6 - 1</span>
+          </div>
+          <div id="matchClock" class="match-clock-badge">⏱ 1 - 00:00</div>
+        </div>
+
+        <div class="progress-track">
+          <div id="progressBarFill" class="progress-bar-fill"></div>
+        </div>
+
+        <div id="headlineTicker" class="headlineTicker">
+          Awaiting kickoff. Autonomous producer agents ready on GN100 unified memory pool.
+        </div>
+      </div>
+
+      <!-- Action Controls -->
+      <div class="control-actions">
+        <select id="speedSelect" class="speed-select" title="Simulation Speed">
+          <option value="4.0">Speed: 4x</option>
+          <option value="6.0" selected>Speed: 6x (Recommended)</option>
+          <option value="10.0">Speed: 10x</option>
+          <option value="20.0">Speed: 20x (Fast Demo)</option>
+        </select>
+
+        <button id="btnStart" class="btn btn-primary">
+          <span>▶</span> Start Match
+        </button>
+        <button id="btnPause" class="btn btn-secondary" style="display: none;">
+          <span>⏸</span> Pause
+        </button>
+        <button id="btnStop" class="btn btn-danger" style="display: none;">
+          <span>⏹</span> Stop
+        </button>
+      </div>
+    </section>
+
+    <!-- ── 3-Column Producer Agents Studio ── -->
+    <section class="producer-columns-grid">
+
+      <!-- Column 1: Fan Producer Agent -->
+      <div id="fanPanel" class="producer-panel fan-panel">
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <div class="agent-identity">
+              <span class="agent-icon">👤</span>
+              <span class="agent-name">Fan Producer</span>
+            </div>
+            <span class="clip-counter-pill">0 Clips</span>
+          </div>
+          <div class="agent-config-bar">
+            <select class="agent-preset-select">
+              <option value="Neymar">⭐ Track Neymar</option>
+              <option value="Messi">⭐ Track Lionel Messi</option>
+              <option value="Suarez">⭐ Track Luis Suarez</option>
+              <option value="__custom__">✏️ Custom Player...</option>
+            </select>
+            <input type="text" class="agent-input-edit" placeholder="Enter player name..." value="Neymar">
+            <button class="btn-icon btn-toggle-edit" title="Edit player tracking">✏️</button>
+          </div>
+        </div>
+        <div class="panel-feed">
+          <div class="feed-empty-state">
+            <div class="empty-icon">👤</div>
+            <p>Awaiting match events. Producer will generate custom player clips as play unfolds.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 2: Tactical Coach Producer Agent -->
+      <div id="coachPanel" class="producer-panel coach-panel">
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <div class="agent-identity">
+              <span class="agent-icon">📋</span>
+              <span class="agent-name">Tactical Coach Producer</span>
+            </div>
+            <span class="clip-counter-pill">0 Clips</span>
+          </div>
+          <div class="agent-config-bar">
+            <select class="agent-preset-select">
+              <option value="Defensive breakdowns & high press">📋 Defensive breakdowns & press</option>
+              <option value="Set piece analysis & organization">📋 Set piece routines & organization</option>
+              <option value="Transition counters & turnovers">📋 Transition counters & turnovers</option>
+              <option value="Offside traps & defensive line">📋 Offside traps & line discipline</option>
+              <option value="__custom__">✏️ Custom Tactical Focus...</option>
+            </select>
+            <input type="text" class="agent-input-edit" placeholder="Enter tactical concept..." value="Defensive breakdowns">
+            <button class="btn-icon btn-toggle-edit" title="Edit tactical focus">✏️</button>
+          </div>
+        </div>
+        <div class="panel-feed">
+          <div class="feed-empty-state">
+            <div class="empty-icon">📋</div>
+            <p>Awaiting match events. Producer will isolate tactical moments and formation shifts.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 3: Social Media Producer Agent -->
+      <div id="socialPanel" class="producer-panel social-panel">
+        <div class="panel-header">
+          <div class="panel-title-row">
+            <div class="agent-identity">
+              <span class="agent-icon">📱</span>
+              <span class="agent-name">Social Media Producer</span>
+            </div>
+            <span class="clip-counter-pill">0 Clips</span>
+          </div>
+          <div class="agent-config-bar">
+            <select class="agent-preset-select">
+              <option value="Top viral moments & goals">🔥 Top viral moments & goals</option>
+              <option value="Dramatic cards, penalties & VAR">⚡ Controversies, penalties & drama</option>
+              <option value="Celebrations & crowd reactions">🎉 Celebrations & bench reactions</option>
+              <option value="__custom__">✏️ Custom Content Angle...</option>
+            </select>
+            <input type="text" class="agent-input-edit" placeholder="Enter content theme..." value="Top viral moments">
+            <button class="btn-icon btn-toggle-edit" title="Edit social theme">✏️</button>
+          </div>
+        </div>
+        <div class="panel-feed">
+          <div class="feed-empty-state">
+            <div class="empty-icon">📱</div>
+            <p>Awaiting match events. Producer will clip viral highlights and write social post copy.</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ── Live Event Timeline / Pulse Strip ── -->
+    <section class="events-timeline-bar">
+      <div class="timeline-header">
+        <span class="timeline-title">📡 Live Multi-Modal Event Stream (SoccerNet + VSS + ASR)</span>
+      </div>
+      <div id="timelineChips" class="timeline-chips-scroller">
+        <!-- Event chips appended here in real-time -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Video Player Modal ── -->
+  <div id="videoModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="modalTitle" class="modal-title">Broadcast Clip Highlight</span>
+        <button id="btnCloseModal" class="btn-close-modal">&times;</button>
+      </div>
+      <div class="video-container">
+        <video id="modalVideoPlayer" controls autoplay playsinline></video>
+      </div>
+      <div id="modalCaption" class="modal-footer"></div>
+    </div>
+  </div>
+
+  <!-- ── Scripts ── -->
+  <script src="/static/js/sse-client.js"></script>
+  <script src="/static/js/video-player.js"></script>
+  <script src="/static/js/agent-panel.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

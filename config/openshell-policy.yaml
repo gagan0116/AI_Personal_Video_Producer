@@ -1,0 +1,51 @@
+# NVIDIA OpenShell Security Policy
+# Enforces kernel-level Landlock & seccomp sandboxing for Producer Agents on DGX Spark
+
+version: "1.0"
+policy:
+  name: sports-producer-security-policy
+  enforcement_mode: strict
+
+# Filesystem Isolation (Landlock LSM)
+filesystem:
+  read_only:
+    - "/data/SoccerNet"          # Match broadcast videos and annotations
+    - "/app"                     # Application code
+    - "/usr/bin/ffmpeg"          # Media cutting utility
+    - "/usr/bin/ffprobe"
+  read_write:
+    - "/output"                  # Generated MP4 highlight clips and thumbnail cache
+    - "/tmp"
+  deny:
+    - "/etc/shadow"
+    - "/etc/passwd"
+    - "/root"
+    - "/home/*/.ssh"
+    - "/var/run/docker.sock"     # Block container escape
+
+# Network Egress Governance
+network:
+  default_action: deny           # Default-deny external internet egress
+  allow_inbound:
+    - port: 8080                 # Web Studio Dashboard
+      protocol: tcp
+  allow_outbound:
+    - host: "127.0.0.1"
+      port: 8000                 # Local Nemotron Lightning NIM
+      protocol: tcp
+    - host: "127.0.0.1"
+      port: 8010                 # Local NVIDIA VSS Microservices
+      protocol: tcp
+  deny_outbound:
+    - "*"                        # Strict data rights protection (no broadcast footage leaks)
+
+# Process Capabilities & Seccomp
+process:
+  allow_binaries:
+    - "python3"
+    - "uvicorn"
+    - "ffmpeg"
+  drop_capabilities:
+    - "CAP_SYS_ADMIN"
+    - "CAP_NET_ADMIN"
+    - "CAP_DAC_OVERRIDE"

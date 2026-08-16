@@ -1,0 +1,94 @@
+### The Challenge + Bounties
+
+---
+
+**Welcome to The Spark Hack Series – Seattle, Hosted by NVIDIA, Acer, and Ascend Venture Capital Fund!** We’re excited to host a diverse group of builders for a weekend. 
+
+All submissions must align with one of the three Challenge Tracks below. Each track defines how your AI works, not what problem it solves—teams are free to tackle any real-world challenge through the lens of their chosen track.
+
+---
+
+#### Main Challenge Tracks
+
+#### **👀 1. See**
+
+**Focus:** AI that understands the physical world.
+
+**The Goal:** Build systems that process visual data—cameras, video streams, images, satellite imagery, maps—to detect, classify, or respond to what's happening in real space. Teams in this track will work with NVIDIA's VSS (Visual Search and Summarization) skills to build perception-first applications.
+
+**Data Source Suggestions:** Bellevue Traffic Map, Seattle Department of Transportation, Traffic Anomaly Dataset, Open Wildlife Cameras, Synthetic Warehouse Safety Dataset, Kitchen and Cooking Video Data, Variety of Labelled Video Data
+
+#### **🔥 2. Do**
+
+**Focus:** AI that plans, acts, and gets things done.
+
+**The Goal:** Build autonomous systems that don't just answer questions—they take action. Multi-step reasoning, tool use, API calls, data retrieval, decision-making across sources. This track is built for long-running agentic workflows that orchestrate across multiple tools and data sources.
+
+**Data Source Suggestions:** Data.gov, US Census Bureau API, Bureau of Labor Statistics API, OpenAQ, WHO Global Health Observatory
+
+#### **⚡️ 3. Spark**
+
+**Focus:** AI that surprises us.
+
+**The Goal:** No constraints on modality or approach. Build something generative. Create a digital twin. Remix the tracks above. The only rule: build it on the Spark and make us wish we'd thought of it first.
+
+**Data Source Suggestions:** Kaggle Datasets, Awesome Public Datasets (GitHub), Humanitarian Data Exchange (UN OCHA), Academic Torrents
+
+---
+
+#### Bounties
+
+- Best Use of NVIDIA Nemotron (see criteria **here**)
+    
+    **Best Use of [NVIDIA Nemotron**](https://app.notion.com/Best-Use-of-NVIDIA-Nemotron-36ff567d17cc801e9a02d75f568d3fc0?pvs=21)
+    
+- Ascend Venture Potential Award
+- NVIDIA Developer Champions Choice Award
+
+
+#### Philosophy
+
+We are judging **Systems Engineering**. A winning project isn't just a slide deck or a simple API wrapper; it is a functioning system that ingests raw data, processes it locally using the DGX Spark, and produces a valuable result.
+
+---
+
+#### **1. Technical Execution & Completeness**
+
+*Did they actually build a working, complex system?*
+
+- **Completeness:** Does the system successfully complete the full data workflow without crashing?
+- **Technical Depth:** Is there significant engineering "under the hood"? Did they build a complex pipeline (e.g., VSS vision pipeline, multi-step agentic orchestration, RAG, fine-tuning, simulation, or custom logic) rather than just a simple static dashboard or basic API wrapper?
+    - For See projects: Does the pipeline handle real-time or streaming input, not just static files?
+    - For Do projects: Does the agent handle multi-step workflows with branching logic or error recovery, not just a single chain of calls?
+    - For Spark projects: Is the underlying system genuinely complex, regardless of approach?
+
+#### **2. NVIDIA Ecosystem & Spark Utility**
+
+*Did they leverage the unique hardware and software provided?*
+
+- **The Stack:** Did they use at least one major NVIDIA library/tool? (e.g., NIMs, RAPIDS, cuOpt, Modulus, NeMo Models). *Note: Merely calling GPT-4 via API gets 0 points here.*
+- **The "Spark Story":** Can they articulate **why** this runs better on a DGX Spark?
+    - *Examples:* "We used the 128GB Unified Memory to hold the video buffer and the LLM context simultaneously" or "We ran inference locally to ensure privacy/latency."
+
+#### **3. Value & Impact**
+
+*Is the solution actually useful?*
+
+- **Problem Fit:** Does the project address a real, clearly defined problem—and does the solution meaningfully move the needle on it? Obvious or superficial framing scores low; specific, well-scoped problems score high.
+    - For See: Does it accurately perceive what it claims to, or is it hallucinating detections?
+        - Example: An AI that detects subtle fractures on ankle X-rays that radiologists frequently miss. (It perceives something meaningful and difficult for humans to reliably see.)
+    - For Do: Does the agent actually accomplish something a human would otherwise have to do manually?
+        - Example: An agent that reviews building permits, checks zoning rules, and routes each application to the correct reviewer—eliminating hours of manual triage. (It automates a task people would otherwise perform themselves.)
+    - For Spark: Is the concept itself bold enough to justify the wildcard track?
+        - Example: A city-wide network of sensors, AI, and autonomous robots that detects infrastructure damage and repairs small cracks before they become potholes. (It's a bold, high-upside concept that goes beyond incremental improvement.)
+- **Usability:** Could a real end user—whether that's a city planner, a clinician, a logistics manager, or an everyday person—actually use this tool to make a decision or get something done tomorrow?
+
+#### **4. Innovation & Execution**
+
+*Did they push the boundaries?*
+
+- **Creativity:**  Did they combine data, models, or modalities in a novel way?
+    - E.g., Using vision models to analyze physical spaces, chaining multiple agents across live data sources, or something in the Spark track nobody saw coming.
+    - See and Do projects are rewarded for unexpected applications of their track's core capability. Spark projects are rewarded for the ambition and originality of the concept itself.
+- **Performance:** Did they optimize the system for speed or scale?
+    - E.g., "We optimized the simulation to run at 50x real-time speed".

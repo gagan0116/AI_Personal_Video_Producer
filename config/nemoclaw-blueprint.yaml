@@ -1,0 +1,63 @@
+# NVIDIA NemoClaw Blueprint Specification
+# Defines sandboxing, inference routing, and capabilities for Personal AI Sports Producer
+
+version: "1.0"
+blueprint:
+  name: personal-ai-sports-producer
+  description: "Autonomous multi-agent sports broadcast personalization running locally on DGX Spark"
+
+# Inference Provider Configuration
+inference:
+  default_provider: local_nim
+  providers:
+    local_nim:
+      type: openai_compatible
+      endpoint: "http://localhost:8000/v1"
+      model: "nemotron-3.5-lightning"
+      context_window: 1048576  # 1M tokens
+      temperature: 0.3
+
+# Privacy and Security Routing
+privacy_router:
+  mode: local_enforced
+  allow_external_egress: false
+  allow_cloud_fallback: false
+  audit_logging: true
+
+# Autonomous Producer Agents
+agents:
+  - id: fan-producer
+    name: "Fan Producer Agent"
+    framework: openclaw
+    role: "Personalized star player tracking and individual highlights"
+    sandbox:
+      image: "nvcr.io/nemo/nemoclaw-sandbox:latest"
+      policy: "config/openshell-policy.yaml"
+    skills:
+      - "vss-ask-video"
+      - "vss-search-archive"
+      - "extract-broadcast-clip"
+
+  - id: coach-producer
+    name: "Tactical Coach Producer Agent"
+    framework: openclaw
+    role: "Tactical formation, pressing structure, and set-piece analysis"
+    sandbox:
+      image: "nvcr.io/nemo/nemoclaw-sandbox:latest"
+      policy: "config/openshell-policy.yaml"
+    skills:
+      - "vss-ask-video"
+      - "vss-search-archive"
+      - "extract-broadcast-clip"
+
+  - id: social-producer
+    name: "Social Media Producer Agent"
+    framework: openclaw
+    role: "Viral engagement curation, goal reels, and social copy synthesis"
+    sandbox:
+      image: "nvcr.io/nemo/nemoclaw-sandbox:latest"
+      policy: "config/openshell-policy.yaml"
+    skills:
+      - "vss-ask-video"
+      - "vss-search-archive"
+      - "extract-broadcast-clip"
