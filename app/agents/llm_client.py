@@ -21,7 +21,7 @@ class NemotronClient:
         self.model = model
         self.api_key = api_key
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-        self.client = httpx.AsyncClient(base_url=self.base_url, headers=headers, timeout=45.0)
+        self.client = httpx.AsyncClient(base_url=self.base_url, headers=headers, timeout=300.0)
 
     async def check_health(self) -> bool:
         """Verify NIM/vLLM microservice availability and resolve active model name."""
