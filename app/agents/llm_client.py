@@ -24,12 +24,21 @@ class NemotronClient:
         self.client = httpx.AsyncClient(base_url=self.base_url, headers=headers, timeout=45.0)
 
     async def check_health(self) -> bool:
-        """Verify NIM microservice availability."""
+        """Verify NIM/vLLM microservice availability and resolve active model name."""
         try:
             resp = await self.client.get("/models")
-            return resp.status_code == 200
+            if resp.status_code == 200:
+                data = resp.json()
+                models = data.get("data", [])
+                if models and isinstance(models, list):
+                    first_model_id = models[0].get("id")
+                    if first_model_id:
+                        self.model = first_model_id
+                        print(f"[NemotronClient] Auto-resolved active model ID: '{self.model}'")
+                return True
         except Exception:
-            return False
+            pass
+        return False
 
     async def chat(
         self,
@@ -38,7 +47,7 @@ class NemotronClient:
         temperature: float = 0.4,
         max_tokens: int = 1024,
     ) -> str:
-        """Send chat completion to Nemotron NIM."""
+        """Send chat completion to Nemotron NIM / vLLM."""
         try:
             payload = {
                 "model": self.model,
@@ -53,10 +62,16 @@ class NemotronClient:
             if resp.status_code == 200:
                 data = resp.json()
                 return data["choices"][0]["message"]["content"]
-            else:
-                print(f"[NemotronClient] NIM returned status {resp.status_code}: {resp.text[:150]}")
+            elif resp.status_code in (400, 404):
+                # Try auto-resolving model name from /models and retry once
+                await self.check_health()
+                payload["model"] = self.model
+                retry_resp = await self.client.post("/chat/completions", json=payload)
+                if retry_resp.status_code == 200:
+                    data = retry_resp.json()
+                    return data["choices"][0]["message"]["content"]
+            print(f"[NemotronClient] LLM server returned status {resp.status_code}: {resp.text[:150]}")
         except Exception as e:
-            # Fallback note for local laptop testing before GN100 NIM deployment
             pass
         return ""
 
