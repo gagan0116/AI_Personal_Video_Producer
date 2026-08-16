@@ -122,6 +122,21 @@ class BaseAgent:
             if not target_event or not caption:
                 continue
 
+            # Sanitize template placeholders if LLM regurgitated raw bracket text
+            target_player = (self.config.custom_input or self.config.preset).strip()
+            caption = (
+                caption.replace("[PLAYER]", target_player)
+                .replace("[Player]", target_player)
+                .replace("[GameTime]", target_event.game_time)
+                .replace("[Time]", target_event.game_time)
+            )
+            if any(ph in caption for ph in ("[Dynamic play description]", "[Analytical insight", "[PUNCHY HOOK]", "[Exciting event description]")):
+                fallback_res = self.heuristic_fallback([target_event])
+                if fallback_res.get("selected_events"):
+                    caption = fallback_res["selected_events"][0].get("caption", caption)
+                    if not reasoning or "explanation" in reasoning.lower() or "principle" in reasoning.lower():
+                        reasoning = fallback_res["selected_events"][0].get("reason", reasoning)
+
             # Optional VSS visual verification / deep Q&A
             if self.vss_client and not target_event.vss_description:
                 try:

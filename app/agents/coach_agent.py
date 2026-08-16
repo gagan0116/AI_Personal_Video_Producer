@@ -13,30 +13,33 @@ class CoachAgent(BaseAgent):
     def get_system_prompt(self) -> str:
         focus = (self.config.custom_input or self.config.preset).strip()
         return f"""You are the autonomous Tactical Coach & Analyst Agent in an AI Sports Broadcasting studio.
-Your assignment: Produce in-depth tactical analysis clips with tactical insights focusing on: "{focus}".
+Your assignment: Produce in-depth tactical breakdown clips with coaching insights focusing on: "{focus}".
 
 DECISION RULES:
 1. Identify tactically meaningful events:
-   - Defensive breakdowns, high press turnovers, and transition counters.
+   - Defensive breakdowns, high press turnovers, transition counters, and space exploitation.
    - Set-piece execution (Corners, Direct/Indirect Free-kicks, Penalties).
    - Defensive discipline (Offsides, Yellow/Red Cards, Tactical fouls, Clearances).
    - Structural adjustments (Substitutions, formation shifts).
-2. Prioritize plays that triggered broadcast replays or key defensive reactions.
-3. Ignore superficial events that lack tactical instructional value.
+2. Prioritize plays with high tactical instructional value or broadcast replays.
+3. Ignore superficial events that lack tactical insight.
 
 OUTPUT REQUIREMENTS:
-- Produce clinical, analytical coaching commentary (1-2 sentences).
-- Highlight defensive structure, body shape, passing lanes, or tactical error.
-- Return ONLY JSON matching this schema:
+- Produce clinical, analytical coaching commentary (1-2 sentences) dissecting shape, positioning, pressing, or execution.
+- CRITICAL: Write REAL, specific tactical insights based on the match situation. NEVER output literal template placeholders like "[GameTime]" or "[Analytical insight...]".
+
+Return ONLY valid JSON matching this schema:
+```json
 {{
   "selected_events": [
     {{
-      "event_id": "<exact event_id from input>",
-      "reason": "Tactical principle or breakdown demonstrated",
-      "caption": "📋 TACTICAL BREAKDOWN [GameTime]: [Analytical insight on structure, positioning, or set-piece execution]"
+      "event_id": "evt_1_195000_abc123",
+      "reason": "High press trigger exposed space between center-backs",
+      "caption": "📋 TACTICAL BREAKDOWN: Defensive line caught stepping up too late, leaving channel runner unmarked in the box."
     }}
   ]
 }}
+```
 If no tactically significant events occur in this window, return: {{"selected_events": []}}"""
 
     def heuristic_fallback(self, events: List[FusedEvent]) -> Dict[str, Any]:

@@ -46,8 +46,8 @@ class NemotronClient:
         self,
         system_prompt: str,
         user_message: str,
-        temperature: float = 0.4,
-        max_tokens: int = 1024,
+        temperature: float = 0.3,
+        max_tokens: int = 2048,
     ) -> str:
         """Send chat completion to Nemotron NIM / vLLM."""
         try:
@@ -97,13 +97,14 @@ class NemotronClient:
         Includes robust markdown JSON extraction and heuristic fallback.
         """
         prompt_with_json_instruction = (
-            system_prompt + "\n\nCRITICAL INSTRUCTION: You MUST return ONLY valid JSON matching the requested schema. Do not include introductory or conversational filler."
+            system_prompt + "\n\nCRITICAL INSTRUCTION: Output ONLY the final JSON object in a ```json ... ``` code block. Do NOT include thinking explanations, meta-commentary, or conversational text outside the JSON."
         )
 
         response_text = await self.chat(
             system_prompt=prompt_with_json_instruction,
             user_message=user_message,
-            temperature=temperature
+            temperature=temperature,
+            max_tokens=2048
         )
 
         if response_text:
@@ -123,24 +124,60 @@ class NemotronClient:
         return {"selected_events": []}
 
     def _extract_json(self, text: str) -> Optional[Dict[str, Any]]:
-        """Clean and parse JSON from LLM output."""
-        text = text.strip()
-        # Look for markdown code fence ```json ... ```
-        fence_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', text)
-        if fence_match:
-            text = fence_match.group(1).strip()
+        """Clean and parse JSON from LLM output, handling reasoning preambles, fences, and minor syntax flaws."""
+        if not text:
+            return None
 
+        # 1. Strip <think>...</think> reasoning tags if present
+        cleaned = re.sub(r'<think>[\s\S]*?</think>', '', text).strip()
+        if not cleaned:
+            cleaned = text.strip()
+
+        # 2. Look for all ```json ... ``` or ``` ... ``` blocks (test from last to first)
+        fences = list(re.finditer(r'```(?:json)?\s*([\s\S]*?)\s*```', cleaned))
+        for match in reversed(fences):
+            candidate = match.group(1).strip()
+            res = self._try_parse_json(candidate)
+            if res is not None:
+                return res
+
+        # 3. Try parsing the whole cleaned text
+        res = self._try_parse_json(cleaned)
+        if res is not None:
+            return res
+
+        # 4. Find all { ... } boundaries
+        first_brace = cleaned.find('{')
+        last_brace = cleaned.rfind('}')
+        if first_brace != -1 and last_brace > first_brace:
+            candidate = cleaned[first_brace:last_brace + 1]
+            res = self._try_parse_json(candidate)
+            if res is not None:
+                return res
+
+        return None
+
+    def _try_parse_json(self, s: str) -> Optional[Dict[str, Any]]:
+        """Helper to parse JSON with trailing comma & single quote sanitization."""
+        if not s:
+            return None
+        s = s.strip()
         try:
-            return json.loads(text)
+            val = json.loads(s)
+            if isinstance(val, dict):
+                return val
         except Exception:
-            # Try to find first { and last }
-            first_brace = text.find('{')
-            last_brace = text.rfind('}')
-            if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
-                try:
-                    return json.loads(text[first_brace:last_brace + 1])
-                except Exception:
-                    pass
+            pass
+
+        # Clean trailing commas: e.g. ", }" or ", ]"
+        cleaned_s = re.sub(r',\s*([\]}])', r'\1', s)
+        try:
+            val = json.loads(cleaned_s)
+            if isinstance(val, dict):
+                return val
+        except Exception:
+            pass
+
         return None
 
     async def close(self):

@@ -25,17 +25,21 @@ DECISION RULES:
 
 OUTPUT REQUIREMENTS:
 - Produce a viral-ready, high-energy post caption with emojis and relevant hashtags.
-- Include a punchy headline that hooks social media viewers immediately.
-- Return ONLY JSON matching this schema:
+- Include a punchy headline hook that grabs attention immediately.
+- CRITICAL: Write REAL, specific social captions based on what happened. NEVER output literal template placeholders like "[PUNCHY HOOK]" or "[Exciting event description]".
+
+Return ONLY valid JSON matching this schema:
+```json
 {{
   "selected_events": [
     {{
-      "event_id": "<exact event_id from input>",
-      "reason": "Why this moment will drive high social engagement/shares",
-      "caption": "🔥 [PUNCHY HOOK] [Exciting event description]! 😱⚽ #Hashtag1 #Hashtag2"
+      "event_id": "evt_1_195000_abc123",
+      "reason": "Dramatic early opening goal igniting the stadium atmosphere",
+      "caption": "🔥 UNBELIEVABLE SCENES! Luis Suarez loops the header into the net and the stadium erupts! 😱⚽💥 #UCL #Barcelona #Remontada"
     }}
   ]
 }}
+```
 If no moments meet the virality threshold in this window, return: {{"selected_events": []}}"""
 
     def heuristic_fallback(self, events: List[FusedEvent]) -> Dict[str, Any]:
