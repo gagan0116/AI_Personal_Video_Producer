@@ -34,7 +34,8 @@ venv.bak/
 .env.*.local
 
 # SoccerNet Videos and Large Datasets
-data/
+/data/
+!app/data/
 *.mkv
 *.mp4
 *.avi
