@@ -54,27 +54,45 @@ async def main():
         print(f"  • {m.league}: {m.display_title}")
 
     test_match = "barcelona_vs_paris_sg"
-    print(f"\n[2/3] Launching high-speed test run for '{test_match}' (Speed: 20x)...")
+    print(f"\n[2/3] Initializing match context for '{test_match}'...")
     
-    # Run first window manually to inspect outputs
-    success = await engine.start_match(test_match, speed_multiplier=20.0)
-    assert success, "Engine failed to start match"
+    # Load match annotations and context
+    match_info = next((m for m in engine.available_matches if m.match_id == test_match), engine.available_matches[0])
+    engine.current_match_info = match_info
+    
+    from app.data.annotation_loader import AnnotationLoader
+    from app.data.player_extractor import PlayerExtractor
+    from app.engine.event_fusion import EventFusionEngine
 
-    # Wait for a couple of windows to execute
-    await asyncio.sleep(4.0)
+    engine.annotation_loader = AnnotationLoader(match_info.data_path)
+    engine.annotation_loader.load()
+    engine.player_extractor = PlayerExtractor(test_match)
+    engine.fusion_engine = EventFusionEngine(engine.player_extractor)
+    engine.vss_client = vss_client
 
-    print(f"\n[3/3] Inspecting Generated Outputs:")
+    for agent in engine.agents:
+        agent.update_match_context(match_info, engine.player_extractor)
+
+    print(f"Loaded {len(engine.annotation_loader.action_events)} action events, {len(engine.annotation_loader.commentary)} commentary segments.")
+
+    print("\n[3/3] Processing Window 1 (Minutes 0:00 - 5:00) with Producer Agents + Nemotron...")
+    await engine._process_window(half=1, start_ms=0, end_ms=300000)
+
+    print("Processing Window 2 (Minutes 5:00 - 10:00)...")
+    await engine._process_window(half=1, start_ms=300000, end_ms=600000)
+
     outputs = engine.get_agent_outputs()
-    print(f"Total highlight clips produced: {len(outputs)}")
+    print(f"\nTotal highlight clips produced by agents: {len(outputs)}")
 
     for agent_id in ("fan", "coach", "social"):
         agent_outs = [o for o in outputs if o.agent_id == agent_id]
         print(f"\n--- {agent_id.upper()} PRODUCER ({len(agent_outs)} outputs) ---")
-        for o in agent_outs[:2]:
+        for o in agent_outs:
             print(f"  [{o.game_time}] {o.event_type} -> {o.caption}")
+            if o.reasoning:
+                print(f"    Reasoning: {o.reasoning}")
             print(f"    Clip URL: {o.clip_url} | Importance: {o.importance}")
 
-    await engine.stop_match()
     await llm_client.close()
 
     print("\n" + "=" * 70)

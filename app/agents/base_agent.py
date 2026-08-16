@@ -97,11 +97,28 @@ class BaseAgent:
         new_outputs: List[AgentOutput] = []
 
         for item in selected_items:
-            event_id = item.get("event_id")
+            event_id = str(item.get("event_id", "")).strip()
             caption = item.get("caption", "").strip()
             reasoning = item.get("reason", "").strip()
 
+            # 1. Exact event_id match
             target_event = next((e for e in events if e.event_id == event_id), None)
+            
+            # 2. Partial/substring ID match
+            if not target_event and event_id:
+                target_event = next((e for e in events if event_id in e.event_id or e.event_id in event_id), None)
+            
+            # 3. Game time or event type match in caption/reasoning
+            if not target_event:
+                for e in events:
+                    if e.game_time in caption or e.game_time in reasoning or (e.event_type.lower() in caption.lower() and e.importance_score >= 0.7):
+                        target_event = e
+                        break
+            
+            # 4. Fallback to first high-importance event
+            if not target_event and events:
+                target_event = max(events, key=lambda x: x.importance_score)
+
             if not target_event or not caption:
                 continue
 
